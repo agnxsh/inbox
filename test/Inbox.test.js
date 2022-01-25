@@ -59,21 +59,42 @@ beforeEach(async () => {
   //these tasks are indeed asynchronous operations therefore they take some amount of time to complete
   //therefore we can use the await keyword
 
-  inbox = new web3.eth.Contract(JSON.parse(interface))
+  inbox = await new web3.eth.Contract(JSON.parse(interface)) //ABI
     .deploy({
       data: bytecode,
       //data of the contract updation in the blockchain
-      arguments: ["Hi there !"],
+      arguments: ["Hi there ! "],
       //initial arguments, datatype should match that of the
     })
     .send({
+      //deploy method organises the data to be deployed into the contract
+      //the send method actually deploys the contract
       from: accounts[0],
       gas: "1000000",
     });
 });
-
+//the presence of an address demarcates that the contract has been deployed properly
 describe("Inbox", () => {
   it("deploys a contract", () => {
-    console.log(accounts);
+    assert.ok(inbox.options.address);
+    //the assert module is a part of the node standard libray
+    //the 'ok' function asserts that whatever we're passing is a value that exists
+  });
+
+  //calling a method returns a promise hence, it is an asynchronous method
+  it("has a default message", async () => {
+    //the parenthesis in .message() is used to pass the arguments through that method
+    //the second set of parenthesis is used to customize the transaction in the call( ) method
+    const message = await inbox.methods.message().call();
+    assert.equal(message, "Hi there ! ");
+  });
+  //here we have to somehow invoke the "message" property and get a default value
+  //so in this case we wanna call a fucntion just to retrieve data from the contract
+  //WE DON'T WANNA MODIFY ANY DATA
+  //therefore there'll be no transaction hash involved and no gwei will be spent
+  it("can change the message", async () => {
+    await inbox.methods.setMessage("bye").send({ from: accounts[0] });
+    const message = await inbox.methods.message().call();
+    assert.equal(message, "bye");
   });
 });
